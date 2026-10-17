@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const app = require('../app');
 
-const PORT = 3001;
 let server;
+let PORT;
 
 function request(path) {
   return new Promise((resolve, reject) => {
@@ -32,12 +32,18 @@ function request(path) {
 }
 
 test.before(async () => {
-  await new Promise((resolve) => {
-    server = app.listen(PORT, resolve);
+  await new Promise((resolve, reject) => {
+    server = app.listen(0, () => {
+      PORT = server.address().port;
+      resolve();
+    });
+    server.once('error', reject);
   });
 });
 
 test.after(async () => {
+  if (!server || !server.listening) return;
+
   await new Promise((resolve, reject) => {
     server.close((error) => {
       if (error) return reject(error);
